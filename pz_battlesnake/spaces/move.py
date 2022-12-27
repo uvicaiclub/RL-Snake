@@ -17,10 +17,10 @@ class Move(Space[str]):
     #possible_moves: List[str] = ["up", "down", "left", "right"]
     possible_moves: List[int] = [0,1,2,3]
     def __init__(self):
-        self.moves: List[str] = self.possible_moves
+        self.moves: List[int] = self.possible_moves
         super().__init__()
 
-    def sample(self) -> str:
+    def sample(self) -> int:
         """
         Returns a random move from the list of possible moves.
 
