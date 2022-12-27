@@ -213,7 +213,7 @@ func (gameState *GameState) printMap(boardState *rules.BoardState, useColor bool
 		if useColor {
 			board[f.X][f.Y] = commands.TERM_FG_FOOD + "●"
 		} else {
-			board[f.X][f.Y] = "⚕"
+			board[f.X][f.Y] = "f"
 		}
 	}
 
@@ -226,7 +226,7 @@ func (gameState *GameState) printMap(boardState *rules.BoardState, useColor bool
 	// Add all snakes to the buffer
 	for _, s := range boardState.Snakes {
 		// FIXES: https://github.com/DaBultz/pz-battlesnake/issues/10
-		if s.EliminatedCause == rules.NotEliminated {
+		if s.EliminatedCause != rules.NotEliminated {
 			continue
 		}
 

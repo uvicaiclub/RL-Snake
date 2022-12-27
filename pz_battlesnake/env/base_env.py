@@ -104,7 +104,7 @@ class BaseEnv(ParallelEnv):
         # assert False, "observation_space() is not implemented yet"
         return Move()
 
-    def render(self, mode="ascii"):
+    def render(self, mode="color"):
         """
         Renders the environment. In human mode, it can print to terminal, open
         up a graphical window, or open up some other display that a human can see and understand.
