@@ -12,7 +12,7 @@ def env(
     colors: List[str] = DEFAULT_COLORS,
 ):
     env = BaseEnv(
-        wdith=width,
+        width=width,
         height=height,
         game_map="standard",
         game_type="standard",
