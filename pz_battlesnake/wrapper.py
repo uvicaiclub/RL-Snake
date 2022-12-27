@@ -61,8 +61,16 @@ def env_reset(options: dict):
 
     return json.loads(res.decode("utf-8"))
 
+def int_to_action(actions):
+    action_dict = {0: "up", 1: "down", 2: "left", 3: "right"}
+    for agent in actions.keys():
+        actions[agent] = action_dict[actions[agent]]
+    return actions
 
 def env_step(actions: dict):
+    actions = int_to_action(actions)
+    print(actions)
+
     # Convert actions to string
     actions = json.dumps(actions).encode("utf-8")
 

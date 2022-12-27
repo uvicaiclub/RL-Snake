@@ -14,8 +14,8 @@ class Move(Space[str]):
         - "right"
     """
 
-    possible_moves: List[str] = ["up", "down", "left", "right"]
-
+    #possible_moves: List[str] = ["up", "down", "left", "right"]
+    possible_moves: List[int] = [0,1,2,3]
     def __init__(self):
         self.moves: List[str] = self.possible_moves
         super().__init__()

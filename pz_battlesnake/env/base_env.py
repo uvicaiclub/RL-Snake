@@ -158,6 +158,7 @@ class BaseEnv(ParallelEnv):
         rewards = {}
         dones = {}
         infos = {}
+        truncations = {a: False for a in self.agents}
 
         for agent in agents:
             observations[agent] = agents[agent]["observation"]
@@ -168,4 +169,4 @@ class BaseEnv(ParallelEnv):
         if env_done():
             self.agents = []
 
-        return observations, rewards, dones, infos
+        return observations, rewards, dones, truncations, infos
