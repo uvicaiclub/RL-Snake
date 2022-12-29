@@ -4,8 +4,8 @@ import os
 
 # Load the shared library from the proper path
 here = os.path.abspath(os.path.dirname(__file__))
-file = f"{here}/../build/lib.linux-x86_64-cpython-39/bin/battlesnake" # HACK TO FIX WRONG PATH, REPLACE lib.linux-x86_64-cpython-39 WITH YOUR PATH TO THE COMPILED BATTLESNAKE AFTER BUILD
-print(file)
+file = "/home/nathanwoloshyn/Desktop/projects/ML/battlesnake_arena/pz-battlesnake/build/lib.linux-x86_64-cpython-39/bin/battlesnake" # HACK TO FIX WRONG PATH, REPLACE lib.linux-x86_64-cpython-39 WITH YOUR PATH TO THE COMPILED BATTLESNAKE AFTER BUILD
+#print(file)
 if os.name == "nt":
     battlesnake = ctypes.CDLL(file)
 elif os.name == "posix":
@@ -69,7 +69,7 @@ def int_to_action(actions):
 
 def env_step(actions: dict):
     actions = int_to_action(actions)
-    print(actions)
+   # print(actions)
 
     # Convert actions to string
     actions = json.dumps(actions).encode("utf-8")
