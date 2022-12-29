@@ -1,5 +1,5 @@
 # First we need to import the enviorment
-from pz_battlesnake.env import solo_v0, standard_v0
+from pz_battlesnake.env import solo_v0
 import time
 
 # Then we can create a new enviorment
@@ -18,6 +18,10 @@ for _ in range(10):
             #print("Agent: ", env.agents)
             # Get Last Observation, Reward, Done, Info
             observation, reward, termination, truncation, info = env.last()
+            try:
+                print("observation board: ", observation["board"])
+            except:
+                pass
             # Pick an action, if agenmt is done, pick None
             #print("termination: ", termination)
             if termination:
@@ -28,8 +32,8 @@ for _ in range(10):
             env.step(action)
         # Code below runs, when all agents has taken an action
         # Render the enviorment
-        time.sleep(0.5)
-        env.render() # uncomment this to render
+        #time.sleep(0.5)
+        #env.render() # uncomment this to render
         # This is a shortcut to set the done to be true, 
         # since when all agents are done the env.agents array will be empty
         done = not env.agents
