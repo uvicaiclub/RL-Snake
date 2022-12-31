@@ -18,10 +18,10 @@ for _ in range(10):
             #print("Agent: ", env.agents)
             # Get Last Observation, Reward, Done, Info
             observation, reward, termination, truncation, info = env.last()
-            try:
-                print("observation board: ", observation["board"])
-            except:
-                pass
+            # try:
+            #     print("observation board: ", observation["board"])
+            # except:
+            #     pass
             # Pick an action, if agenmt is done, pick None
             #print("termination: ", termination)
             if termination:

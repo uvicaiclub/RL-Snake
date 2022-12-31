@@ -4,7 +4,15 @@ import os
 
 # Load the shared library from the proper path
 here = os.path.abspath(os.path.dirname(__file__))
-file = "/home/nathanwoloshyn/Desktop/projects/ML/battlesnake_arena/pz-battlesnake/build/lib.linux-x86_64-cpython-39/bin/battlesnake" # HACK TO FIX WRONG PATH, REPLACE with you path to the built battlesnake files
+index = here.rindex("pz_battlesnake")
+# Use the replace method to replace the last occurrence of the substring with an empty string
+here = here[:index] + here[index:].replace("pz_battlesnake", "", 1)
+here = here + "build/"
+
+dirs_in_here = os.listdir(here)
+for dir in dirs_in_here:
+    if "cpython" in dir:
+        file = here + dir + "/bin/battlesnake"
 #print(file)
 if os.name == "nt":
     battlesnake = ctypes.CDLL(file)
