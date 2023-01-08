@@ -289,7 +289,6 @@ num_episodes = 6000
 model = DQN(n_observations, n_actions).to(device)
 
 
-policy_net.load_state_dict(torch.load("./saved_models/policy_weights_10000_episodes_rewarding_winner_on_cc.pt", map_location=torch.device(device)))
 for i_episode in range(num_episodes):
     # Initialize the environment and get it's state
     t = 0
@@ -357,4 +356,4 @@ plot_durations(show_result=True)
 plt.ioff()
 plt.show()
 
-torch.save(policy_net.state_dict(), f"./saved_models/policy_weights_{num_episodes}_episodes_rewarding_winner.pt")
+#torch.save(policy_net.state_dict(), f"./saved_models/policy_weights_{num_episodes}.pt")
