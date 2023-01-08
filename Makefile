@@ -16,3 +16,9 @@ build-docs:
 serve-docs:
 	@rm -rf build/
 	@poetry run sphinx-autobuild docs/source build/ -b dirhtml
+
+docker-build:
+	docker build -t uvicaiclub/snakegym:latest .
+
+docker-run:
+	docker run uvicaiclub/snakegym:latest
