@@ -6,26 +6,26 @@ import os
 here = os.path.abspath(os.path.dirname(__file__))
 index = here.rindex("pz_battlesnake")
 # Use the replace method to replace the last occurrence of the substring with an empty string
-print(here)
+#print(here)
 here = here[:index] + here[index:].replace("pz_battlesnake", "", 1)
-print(here)
+#print(here)
 if ".egg" not in here:
     here = here + "build/"
 #print(here)
 dirs_in_here = os.listdir(here)
-print(dirs_in_here)
+#print(dirs_in_here)
 for dir in dirs_in_here:
     try:
         if dir == "bin":
             if "battlesnake" in os.listdir(here + dir):
                 file = here + dir + "/battlesnake"
         else:
-            print(dir, os.listdir(here + dir))
+            #print(dir, os.listdir(here + dir))
             if "bin" in os.listdir(here + dir):
                 file = here +dir +"/bin/battlesnake"
     except:
         pass
-print(file)
+#print(file)
 if os.name == "nt":
     battlesnake = ctypes.CDLL(file)
 elif os.name == "posix":
