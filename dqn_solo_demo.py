@@ -1,10 +1,8 @@
 from pz_battlesnake.env import solo_v0
-import pettingzoo
-import gymnasium as gym
+
 import math
 import random
-import numpy as np
-import matplotlib
+
 import matplotlib.pyplot as plt
 from collections import namedtuple, deque
 from itertools import count
@@ -19,7 +17,7 @@ env = solo_v0.env(width=7, height=7) # create a 7x7 solo enviorment
 plt.ion()
 
 
-device = torch.device("cpu") #running on laptop lmao
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 Transition = namedtuple('Transition', 
                         ('state', 'action', 'next_state', 'reward')) #saving the result of taking action a in state s, we progress to the next state and observe a reward
 class DQN(nn.Module):
