@@ -3,7 +3,7 @@ from gym.spaces.space import Space
 import random
 
 
-class Move(Space[str]):
+class Move(Space[int]):
     """
     This class represents the move action in BattleSnake, which is documented under response property of the /move endpoint. Refer to the battlesnake docs: https://docs.battlesnake.com/references/api#post-move
 
@@ -25,7 +25,7 @@ class Move(Space[str]):
         Returns a random move from the list of possible moves.
 
         Returns:
-            str: either "up", "down", "left", or "right"
+            int: representing the move
 
         Example:
             >>> move = Move()
