@@ -11,7 +11,7 @@ def env(
     colors: List[str] = DEFAULT_COLORS,
 ):
     env = BaseEnv(
-        wdith=21,
+        width=21,
         height=19,
         game_map="arcade_maze",
         game_type="wrapped",

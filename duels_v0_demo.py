@@ -36,13 +36,13 @@ for _ in range(10):
                 dead_agents.append(agent)
                 if len(obs["board"]["snakes"]) == 1:
                     done = True
-                    print("WINNER:", obs["board"]["snakes"][0]["id"])
-                else:
-                    print("TIE")
+                    #print("WINNER:", obs["board"]["snakes"][0]["id"])
+                #else:
+                    #print("TIE")
        # print("dead agents", dead_agents)
         # Code below runs, when all agents has taken an action
         # Render the enviorment
-        time.sleep(0.5)
+        time.sleep(0.2)
         env.render() # uncomment this to render
         #since this is a duels env, we need to check if any agents are dead
         done = (len(dead_agents) > 0)
