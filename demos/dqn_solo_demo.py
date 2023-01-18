@@ -59,8 +59,8 @@ class ReplayMemory(object):
 # EPS_DECAY controls the rate of exponential decay of epsilon, higher means a slower decay
 # TAU is the update rate of the target network
 # LR is the learning rate of the AdamW optimizer
-BATCH_SIZE = 128
-GAMMA = 0.99
+BATCH_SIZE = 5000
+GAMMA = 1
 EPS_START = 0.9
 EPS_END = 0.001 #in long games each action is really important, so we want to be greedy after lots of training
 EPS_DECAY = 1000
@@ -76,7 +76,9 @@ observation, reward, termination, truncation, info = env.last()
 #print(observation)
 '''example board
 
-{'height': 15, 'width': 15, 'snakes': [{'id': 'agent_0', 'name': 'agent_0', 'latency': '0', 'health': 99, 'body': [{'x': 8, 'y': 3}, {'x': 7, 'y': 3}, {'x': 7, 'y': 3}], 'head': {'x': 8, 'y': 3}, 'length': 3, 'shout': '', 'squad': '', 'customizations': {'color': '#00FF00', 'head': '', 'tail': ''}}], 'food': [{'x': 13, 'y': 13}, {'x': 12, 'y': 10}], 'hazards': []}
+{'height': 15, 'width': 15, 'snakes': [{'id': 'agent_0', 'name': 'agent_0', 'latency': '0', 'health': 99, 
+'body': [{'x': 8, 'y': 3}, {'x': 7, 'y': 3}, {'x': 7, 'y': 3}], 'head': {'x': 8, 'y': 3}, 'length': 3, 'shout': '', 
+'squad': '', 'customizations': {'color': '#00FF00', 'head': '', 'tail': ''}}], 'food': [{'x': 13, 'y': 13}, {'x': 12, 'y': 10}], 'hazards': []}
 '''
 
 
@@ -143,7 +145,7 @@ target_net.load_state_dict(policy_net.state_dict())
 optimizer = optim.AdamW(policy_net.parameters(), lr=LR, amsgrad=True)
 
 #initialize the replay memory
-memory = ReplayMemory(10000)
+memory = ReplayMemory(90000)
 
 
 steps_done = 0
@@ -197,6 +199,7 @@ def optimize_model():
     if len(memory) < BATCH_SIZE:
         return
     #print("memory", memory)
+    #grab BATCH_SIZE random transitions from the replay memory
     transitions = memory.sample(BATCH_SIZE)
     # Transpose the batch (see https://stackoverflow.com/a/19343/3343043 for
     # detailed explanation). This converts batch-array of Transitions
