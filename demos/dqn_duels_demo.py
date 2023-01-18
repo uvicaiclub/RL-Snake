@@ -6,7 +6,8 @@ import gymnasium as gym
 import math
 import random
 import numpy as np
-import matplotlib
+import matplotlib            # if i_episode % 100 == 0 and i_episode != 0: #only plotting every 100 eps to avoid the annoying popups
+            #     plot_durations()
 import matplotlib.pyplot as plt
 from collections import namedtuple, deque
 from itertools import count
@@ -349,8 +350,8 @@ for i_episode in range(num_episodes):
 
             if done:
                 episode_durations.append(t + 1)
-                if i_episode % 100 == 0 and i_episode != 0: #only plotting every 100 eps to avoid the annoying popups
-                    plot_durations()
+                # if i_episode % 100 == 0 and i_episode != 0: #only plotting every 100 eps to avoid the annoying popups
+                #     plot_durations()
                 break
 
 print('Complete')
