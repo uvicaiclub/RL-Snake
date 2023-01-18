@@ -1,3 +1,5 @@
+import sys
+sys.path.append('..') #janky fix for package not properly installing on remote
 from pz_battlesnake.env import solo_v0
 
 import math
