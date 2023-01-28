@@ -106,73 +106,115 @@ Where its body segments are
 Where the food is
 '''
 def observation_to_values(observation):
-    #print(observation)
     try:
         board = observation['board']
     except:
         observation = observation['observation']
+    #init
     board = observation['board']
-    your_health = 100
-    other_snakes_health = [100 for i in range(len(board["snakes"])-1)]
-    head_matrix = [] #0 unless the head on that cell, then 1
-    body_matrix = [] #0 unless a body segment on that cell, then 1
-    other_snakes_heads = []
-    other_snakes_bodies = []
-    food_matrix = [] #0 unless food on that cell, then 1
-    #iterate over the grid
-    for x in range(0, board["height"]):
-        #fill the current row with 0s
-        head_matrix.append([0 for i in range(board["width"])])
-        body_matrix.append([0 for i in range(board["width"])])
-        food_matrix.append([0 for i in range(board["width"])])
-        other_snakes_bodies.append([0 for i in range(board["width"])])
-        other_snakes_heads.append([0 for i in range(board["width"])])
-        for y in range(0, board["width"]):
-            for snake in board["snakes"]:
-                if snake["id"] == observation["you"]["id"]:
-                    your_health = snake["health"]
-                    #if the head is on this cell, set the head matrix to 1
-                    if snake["head"]["x"] == x and snake["head"]["y"] == y:
-                        head_matrix[x][y] = 1
-                    #if a body segment is on this cell, set the body matrix to 1
-                    for body in snake["body"]:
-                        if body["x"] == x and body["y"] == y:
-                            body_matrix[x][y] = 1
-                else:
-                    #if the head is on this cell, set the head matrix to 1
-                    other_snakes_health.append(snake["health"])
-                    if snake["head"]["x"] == x and snake["head"]["y"] == y:
-                        other_snakes_heads[x][y] = 1
-                    #if a body segment is on this cell, set the body matrix to 1
-                    for body in snake["body"]:
-                        if body["x"] == x and body["y"] == y:
-                            other_snakes_bodies[x][y] = 1
-            #if food is on this cell, set the food matrix to 1
-            for food in board["food"]:
-                if food["x"] == x and food["y"] == y:
-                    food_matrix[x][y] = 1
+    health = 100
+    n_channels = 6
+    state_matrix = np.zeros((n_channels, board["height"], board["width"]))
+    #fill
+    for _snake in board['snakes']:
+        health = np.array(_snake['health'])
+        #if us
+        if _snake['id'] == observation['you']['id']:
+            #place head on channel 0
+            state_matrix[0, _snake['head']['x'], _snake['head']['y']] = 1
 
-    #flatten the matrices into a single vector
-    values = []
-    for x in head_matrix:
-        for y in x:
-            values.append(y)
-    for x in body_matrix:
-        for y in x:
-            values.append(y)
-    for x in other_snakes_heads:
-        for y in x:
-            values.append(y)
-    for x in other_snakes_bodies:
-        for y in x:
-            values.append(y)
-    for x in food_matrix:
-        for y in x:
-            values.append(y)
-    for x in other_snakes_health:
-        values.append(x)
-    values.append(your_health) 
-    return values
+            #place body on channel 1
+            for _body_segment in _snake['body']:
+                state_matrix[1, _body_segment['x'], _body_segment['y']] = 1
+        else:
+            #place head on channel 0
+            state_matrix[2, _snake['head']['x'], _snake['head']['y']] = 1
+
+            #place body on channel 1
+            for _body_segment in _snake['body']:
+                state_matrix[3, _body_segment['x'], _body_segment['y']] = 1
+    #place food on channel 2
+    for _food in board["food"]:
+        state_matrix[4,_food['x'], _food['y']] = 1
+    #create health channel
+    state_matrix[5] = np.full((board["height"], board["width"]), health)
+    #flatten
+    state_matrix = state_matrix.reshape(-1,1)
+
+    state_matrix = np.concatenate([state_matrix, health.reshape(1,1)], axis=0)
+    return state_matrix.flatten()
+
+
+#def observation_to_values(observation):
+
+    
+    # #print(observation)
+    # try:
+    #     board = observation['board']
+    # except:
+    #     observation = observation['observation']
+    # board = observation['board']
+    # your_health = 100
+    # other_snakes_health = [100 for i in range(len(board["snakes"])-1)]
+    # head_matrix = [] #0 unless the head on that cell, then 1
+    # body_matrix = [] #0 unless a body segment on that cell, then 1
+    # other_snakes_heads = []
+    # other_snakes_bodies = []
+    # food_matrix = [] #0 unless food on that cell, then 1
+    # #iterate over the grid
+    # for x in range(0, board["height"]):
+    #     #fill the current row with 0s
+    #     head_matrix.append([0 for i in range(board["width"])])
+    #     body_matrix.append([0 for i in range(board["width"])])
+    #     food_matrix.append([0 for i in range(board["width"])])
+    #     other_snakes_bodies.append([0 for i in range(board["width"])])
+    #     other_snakes_heads.append([0 for i in range(board["width"])])
+    #     for y in range(0, board["width"]):
+    #         for snake in board["snakes"]:
+    #             if snake["id"] == observation["you"]["id"]:
+    #                 your_health = snake["health"]
+    #                 #if the head is on this cell, set the head matrix to 1
+    #                 if snake["head"]["x"] == x and snake["head"]["y"] == y:
+    #                     head_matrix[x][y] = 1
+    #                 #if a body segment is on this cell, set the body matrix to 1
+    #                 for body in snake["body"]:
+    #                     if body["x"] == x and body["y"] == y:
+    #                         body_matrix[x][y] = 1
+    #             else:
+    #                 #if the head is on this cell, set the head matrix to 1
+    #                 other_snakes_health.append(snake["health"])
+    #                 if snake["head"]["x"] == x and snake["head"]["y"] == y:
+    #                     other_snakes_heads[x][y] = 1
+    #                 #if a body segment is on this cell, set the body matrix to 1
+    #                 for body in snake["body"]:
+    #                     if body["x"] == x and body["y"] == y:
+    #                         other_snakes_bodies[x][y] = 1
+    #         #if food is on this cell, set the food matrix to 1
+    #         for food in board["food"]:
+    #             if food["x"] == x and food["y"] == y:
+    #                 food_matrix[x][y] = 1
+
+    # #flatten the matrices into a single vector
+    # values = []
+    # for x in head_matrix:
+    #     for y in x:
+    #         values.append(y)
+    # for x in body_matrix:
+    #     for y in x:
+    #         values.append(y)
+    # for x in other_snakes_heads:
+    #     for y in x:
+    #         values.append(y)
+    # for x in other_snakes_bodies:
+    #     for y in x:
+    #         values.append(y)
+    # for x in food_matrix:
+    #     for y in x:
+    #         values.append(y)
+    # for x in other_snakes_health:
+    #     values.append(x)
+    # values.append(your_health) 
+    # return values
 
 #get the observation vector
 state = observation_to_values(observation["observation"])
