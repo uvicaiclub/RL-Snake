@@ -24,19 +24,31 @@ Transition = namedtuple('Transition',
                         ('state', 'action', 'next_state', 'reward')) #saving the result of taking action a in state s, we progress to the next state and observe a reward
 class DQN(nn.Module):
 
-    def __init__(self, n_observations, n_actions):
+    def __init__(self, n_observations, n_actions, hidden_dim):
         super(DQN, self).__init__()
-        self.layer1 = nn.Linear(n_observations, 128) #input layer, takes in n observations about the state -> feeds into layer with 128 neurons
-        self.layer2 = nn.Linear(128, 128) #hidden layer
-        self.layer3 = nn.Linear(128, n_actions) #output layer
-
+        self.input_dim = n_observations
+        self.output_dim = n_actions
+        self.hidden_dim = hidden_dim
+        current_dim = n_observations
+        self.layers = nn.ModuleList()
+        for hdim in hidden_dim:
+            self.layers.append(nn.Linear(current_dim, hdim))
+            current_dim = hdim
+        self.layers.append(nn.Linear(current_dim, n_actions))
     # Called with either one element to determine next action, or a batch
     # during optimization. Returns tensor([[left0exp,right0exp]...]).
     def forward(self, x):
-        x = F.relu(self.layer1(x))
-        x = F.relu(self.layer2(x))
-        return self.layer3(x)
-
+        # x = torch.relu(self.layer1(x))
+        # x = torch.relu(self.layer2(x))
+        # x = torch.relu(self.layer3(x))
+        # x = torch.relu(self.layer4(x))
+        sm = torch.nn.LogSoftmax(dim=1)
+        # x = sm(self.layer5(x))
+        # return self.layer6(x)
+        for layer in self.layers[:-1]:
+            x = torch.relu(layer(x))
+        out = self.layers[-1](x)
+        return out    
 class ReplayMemory(object):
 
     def __init__(self, capacity):
@@ -123,8 +135,12 @@ n_observations = len(state) #note the length of the vector
 #print("size of obs vector: ", n_observations)
 
 #initialize the networks
-policy_net = DQN(n_observations, n_actions).to(device) 
-target_net = DQN(n_observations, n_actions).to(device) 
+num_hlayers = int(input("Number of hidden layers:   "))
+width_hlayers = int(input("Width of hidden layers:   "))
+hdims = [width_hlayers for i in range(0,num_hlayers)]
+#initialize the networks
+policy_net = DQN(n_observations, n_actions, hdims).to(device) 
+target_net = DQN(n_observations, n_actions, hdims).to(device) 
 target_net.load_state_dict(policy_net.state_dict()) 
 
 #initialize the optimizer
