@@ -105,28 +105,30 @@ def observation_to_values(observation):
     #init
     board = observation['board']
     health = 100
-    n_channels = 4
+    n_channels = 5
     state_matrix = np.zeros((n_channels, board["height"], board["width"]))
     #fill
     for _snake in board['snakes']:
         health = np.array(_snake['health'])
         #place head on channel 0
         state_matrix[0, _snake['head']['x'], _snake['head']['y']] = 1
-
+        #place tail on channel 1
+        state_matrix[1, _snake['body'][-1]['x'], _snake['body'][-1]['y']] = 1
         #place body on channel 1
         for _body_segment in _snake['body']:
-            state_matrix[1, _body_segment['x'], _body_segment['y']] = 1
+            state_matrix[2, _body_segment['x'], _body_segment['y']] = 1
 
     #place food on channel 2
     for _food in board["food"]:
-        state_matrix[2,_food['x'], _food['y']] = 1
+        state_matrix[3,_food['x'], _food['y']] = 1
     #create health channel
-    state_matrix[3] = np.full((board["height"], board["width"]), health)
+    state_matrix[4] = np.full((board["height"], board["width"]), health)
     #flatten
-    state_matrix = state_matrix.reshape(-1,1)
+   # state_matrix = state_matrix.reshape(-1,1) don't flatten if using conv layer
 
-    state_matrix = np.concatenate([state_matrix, health.reshape(1,1)], axis=0)
-    return state_matrix.flatten()
+   # state_matrix = np.concatenate([state_matrix, health.reshape(1,1)], axis=0)
+    
+    return state_matrix.flatten() #dont flatten if using conv2d layers
 
 #get the observation vector
 state = observation_to_values(observation["observation"])
