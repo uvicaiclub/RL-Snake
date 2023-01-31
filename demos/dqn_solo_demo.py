@@ -71,8 +71,8 @@ class ReplayMemory(object):
 # EPS_DECAY controls the rate of exponential decay of epsilon, higher means a slower decay
 # TAU is the update rate of the target network
 # LR is the learning rate of the AdamW optimizer
-BATCH_SIZE = 5000
-GAMMA = 1
+BATCH_SIZE = 500
+GAMMA = 0.99
 EPS_START = 0.9
 EPS_END = 0.001 #in long games each action is really important, so we want to be greedy after lots of training
 EPS_DECAY = 1000
@@ -248,7 +248,7 @@ def optimize_model():
     optimizer.step()
 
 #in test reaches about 250 turns on average in 2000 episodes
-num_episodes = 2000
+num_episodes = int(input("How many episodes? "))
 
 for i_episode in range(num_episodes):
     # Initialize the environment and get it's state
@@ -260,7 +260,13 @@ for i_episode in range(num_episodes):
     #print("state: ", state)
     state = torch.tensor(state, dtype=torch.float32, device=device).unsqueeze(0)
     done = False
-
+    #every 10 episodes, update the target network to be equal to the policy network
+    if i_episode % 10 == 0:
+        target_net_state_dict = target_net.state_dict()
+        policy_net_state_dict = policy_net.state_dict()
+        for key in policy_net_state_dict:
+            target_net_state_dict[key] = policy_net_state_dict[key]
+        target_net.load_state_dict(target_net_state_dict)
     while not done:
         agent = env.agents[0]
         action = select_action(state)
@@ -288,18 +294,11 @@ for i_episode in range(num_episodes):
         # Perform one step of the optimization (on the policy network)
         optimize_model()
 
-        # Soft update of the target network's weights
-        # θ′ ← τ θ + (1 −τ )θ′
-        target_net_state_dict = target_net.state_dict()
-        policy_net_state_dict = policy_net.state_dict()
-        for key in policy_net_state_dict:
-            target_net_state_dict[key] = policy_net_state_dict[key]*TAU + target_net_state_dict[key]*(1-TAU)
-        target_net.load_state_dict(target_net_state_dict)
 
         if done:
             episode_durations.append(t + 1)
-            # if i_episode % 100 == 0 and i_episode != 0: #only plotting every 100 eps to avoid the annoying popups
-            #     plot_durations()
+            if i_episode % 100 == 0 and i_episode != 0: #only plotting every 100 eps to avoid the annoying popups
+                plot_durations()
             break
 
 print('Complete')
