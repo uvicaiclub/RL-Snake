@@ -18,14 +18,7 @@ import torch.nn.functional as F
 import time
 import os
 
-env = duels_v0.env() # create a default duels environment
 
-plt.ion()
-
-
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-Transition = namedtuple('Transition', 
-                        ('state', 'action', 'next_state', 'reward', 'agent')) #saving the result of taking action a in state s, we progress to the next state and observe a reward
 class DQN(nn.Module):
 
     def __init__(self, n_observations, n_actions, hidden_dim):
@@ -54,6 +47,7 @@ class DQN(nn.Module):
         out = self.layers[-1](x)
         return out    
 
+
 class ReplayMemory(object):
 
     def __init__(self, capacity):
@@ -76,28 +70,7 @@ class ReplayMemory(object):
                 self.push(*new_transition)
                 break
 
-# BATCH_SIZE is the number of transitions sampled from the replay buffer
-# GAMMA is the discount factor as mentioned in the previous section
-# EPS_START is the starting value of epsilon
-# EPS_END is the final value of epsilon
-# EPS_DECAY controls the rate of exponential decay of epsilon, higher means a slower decay
-# TAU is the update rate of the target network
-# LR is the learning rate of the AdamW optimizer
-BATCH_SIZE = 128
-GAMMA = 0.99
-EPS_START = 0.1
-EPS_END = 0 #in long games each action is really important, so we want to be greedy after lots of training
-EPS_DECAY = 2000
-TAU = 0.005
-LR = 1e-4   
 
-# 4 actions, left, right, up, down
-n_actions = 4
-# Get the number of state observations
-env.reset()
-
-observation, reward, termination, truncation, info = env.last()
-#print(observation)
 '''example observation:
 
 {'game': {'id': 'cb7e7773-03e7-43e4-afad-9da19c0ede0c', 'ruleset': {'name': 'standard', 'version': 'cli', 
@@ -158,100 +131,6 @@ def observation_to_values(observation):
     return state_matrix.flatten()
 
 
-#def observation_to_values(observation):
-
-    
-    # #print(observation)
-    # try:
-    #     board = observation['board']
-    # except:
-    #     observation = observation['observation']
-    # board = observation['board']
-    # your_health = 100
-    # other_snakes_health = [100 for i in range(len(board["snakes"])-1)]
-    # head_matrix = [] #0 unless the head on that cell, then 1
-    # body_matrix = [] #0 unless a body segment on that cell, then 1
-    # other_snakes_heads = []
-    # other_snakes_bodies = []
-    # food_matrix = [] #0 unless food on that cell, then 1
-    # #iterate over the grid
-    # for x in range(0, board["height"]):
-    #     #fill the current row with 0s
-    #     head_matrix.append([0 for i in range(board["width"])])
-    #     body_matrix.append([0 for i in range(board["width"])])
-    #     food_matrix.append([0 for i in range(board["width"])])
-    #     other_snakes_bodies.append([0 for i in range(board["width"])])
-    #     other_snakes_heads.append([0 for i in range(board["width"])])
-    #     for y in range(0, board["width"]):
-    #         for snake in board["snakes"]:
-    #             if snake["id"] == observation["you"]["id"]:
-    #                 your_health = snake["health"]
-    #                 #if the head is on this cell, set the head matrix to 1
-    #                 if snake["head"]["x"] == x and snake["head"]["y"] == y:
-    #                     head_matrix[x][y] = 1
-    #                 #if a body segment is on this cell, set the body matrix to 1
-    #                 for body in snake["body"]:
-    #                     if body["x"] == x and body["y"] == y:
-    #                         body_matrix[x][y] = 1
-    #             else:
-    #                 #if the head is on this cell, set the head matrix to 1
-    #                 other_snakes_health.append(snake["health"])
-    #                 if snake["head"]["x"] == x and snake["head"]["y"] == y:
-    #                     other_snakes_heads[x][y] = 1
-    #                 #if a body segment is on this cell, set the body matrix to 1
-    #                 for body in snake["body"]:
-    #                     if body["x"] == x and body["y"] == y:
-    #                         other_snakes_bodies[x][y] = 1
-    #         #if food is on this cell, set the food matrix to 1
-    #         for food in board["food"]:
-    #             if food["x"] == x and food["y"] == y:
-    #                 food_matrix[x][y] = 1
-
-    # #flatten the matrices into a single vector
-    # values = []
-    # for x in head_matrix:
-    #     for y in x:
-    #         values.append(y)
-    # for x in body_matrix:
-    #     for y in x:
-    #         values.append(y)
-    # for x in other_snakes_heads:
-    #     for y in x:
-    #         values.append(y)
-    # for x in other_snakes_bodies:
-    #     for y in x:
-    #         values.append(y)
-    # for x in food_matrix:
-    #     for y in x:
-    #         values.append(y)
-    # for x in other_snakes_health:
-    #     values.append(x)
-    # values.append(your_health) 
-    # return values
-
-#get the observation vector
-state = observation_to_values(observation["observation"])
-n_observations = len(state) #note the length of the vector
-
-#print("size of obs vector: ", n_observations)
-
-#initialize the networks
-num_hlayers = int(input("Number of hidden layers:   "))
-width_hlayers = int(input("Width of hidden layers:   "))
-hdims = [width_hlayers for i in range(0,num_hlayers)]
-#initialize the networks
-policy_net = DQN(n_observations, n_actions, hdims).to(device) 
-target_net = DQN(n_observations, n_actions, hdims).to(device) 
-target_net.load_state_dict(policy_net.state_dict()) 
-#initialize the optimizer
-optimizer = optim.AdamW(policy_net.parameters(), lr=LR, amsgrad=True)
-
-#initialize the replay memory
-memory = ReplayMemory(10000)
-
-
-steps_done = 0
-
 '''Select an action using the policy network, or a random action with probability epsilon'''
 def select_action(state):
     global steps_done
@@ -267,9 +146,6 @@ def select_action(state):
     else:
         return torch.tensor([[env.action_space(env.agents[0]).sample()]], device=device, dtype=torch.long)
 
-
-# number of turns the snake survives in each episode
-episode_durations = []
 
 '''interactive plotting'''
 def plot_durations(show_result=False):
@@ -290,7 +166,6 @@ def plot_durations(show_result=False):
         plt.plot(means.numpy())
 
     plt.pause(0.001)  # pause a bit so that plots are updated
-
 
 
 '''Optimize our Q function approximator using the replay memory
@@ -345,9 +220,59 @@ def optimize_model():
     torch.nn.utils.clip_grad_value_(policy_net.parameters(), 100)
     optimizer.step()
 
-#in test reaches about 250 turns on average in 2000 episodes
-num_episodes = 6000
 
+env = duels_v0.env() # create a default duels environment
+plt.ion()
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+# Saving the result of taking action a in state s, we progress to the next state and observe a reward
+Transition = namedtuple(
+    'Transition', 
+    ('state', 'action', 'next_state', 'reward', 'agent')
+)
+# BATCH_SIZE is the number of transitions sampled from the replay buffer
+BATCH_SIZE = 128
+# GAMMA is the discount factor as mentioned in the previous section
+GAMMA = 0.99
+# EPS_START is the starting value of epsilon
+EPS_START = 0.1
+# EPS_END is the final value of epsilon
+EPS_END = 0 # In long games each action is really important, so we want to be greedy after lots of training
+# EPS_DECAY controls the rate of exponential decay of epsilon, higher means a slower decay
+EPS_DECAY = 2000
+# TAU is the update rate of the target network
+TAU = 0.005
+# LR is the learning rate of the AdamW optimizer
+LR = 1e-4
+
+# 4 actions, left, right, up, down
+n_actions = 4
+# Get the number of state observations
+env.reset()
+observation, reward, termination, truncation, info = env.last()
+# Get the observation vector
+state = observation_to_values(observation["observation"])
+n_observations = len(state) # Note the length of the vector
+
+# Initialize the networks
+num_hlayers = int(input("Number of hidden layers:   "))
+width_hlayers = int(input("Width of hidden layers:   "))
+hdims = [width_hlayers for i in range(0,num_hlayers)]
+
+# Initialize the networks
+policy_net = DQN(n_observations, n_actions, hdims).to(device) 
+target_net = DQN(n_observations, n_actions, hdims).to(device) 
+target_net.load_state_dict(policy_net.state_dict())
+
+# Initialize the optimizer
+optimizer = optim.AdamW(policy_net.parameters(), lr=LR, amsgrad=True)
+
+# Initialize the replay memory
+memory = ReplayMemory(10000)
+steps_done = 0
+# Number of turns the snake survives in each episode
+episode_durations = []
+# In test reaches about 250 turns on average in 2000 episodes
+num_episodes = 500
 
 for i_episode in range(num_episodes):
     # Initialize the environment and get it's state
@@ -356,7 +281,6 @@ for i_episode in range(num_episodes):
     env.reset()
     observation, reward, termination, truncation, info = env.last()
     state = observation_to_values(observation["observation"])
-    #print("state: ", state)
     state = torch.tensor(state, dtype=torch.float32, device=device).unsqueeze(0)
     done = False
 
@@ -384,7 +308,6 @@ for i_episode in range(num_episodes):
                 next_state = None
             else:
                 reward = 0 if t > 50 else 0.1
-                #print(observation)
                 next_state = torch.tensor(observation_to_values(observation), dtype=torch.float32, device=device).unsqueeze(0)
             t += 0.5
             reward = torch.tensor([reward], device=device)
