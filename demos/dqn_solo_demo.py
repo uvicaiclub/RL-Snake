@@ -14,14 +14,7 @@ import torch.optim as optim
 import torch.nn.functional as F
 import time
 
-env = solo_v0.env(width=7, height=7) # create a 7x7 solo enviorment
 
-plt.ion()
-
-
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-Transition = namedtuple('Transition', 
-                        ('state', 'action', 'next_state', 'reward')) #saving the result of taking action a in state s, we progress to the next state and observe a reward
 class DQN(nn.Module):
 
     def __init__(self, n_observations, n_actions, hidden_dim):
@@ -64,35 +57,6 @@ class ReplayMemory(object):
     def __len__(self):
         return len(self.memory)
 
-# BATCH_SIZE is the number of transitions sampled from the replay buffer
-# GAMMA is the discount factor as mentioned in the previous section
-# EPS_START is the starting value of epsilon
-# EPS_END is the final value of epsilon
-# EPS_DECAY controls the rate of exponential decay of epsilon, higher means a slower decay
-# TAU is the update rate of the target network
-# LR is the learning rate of the AdamW optimizer
-BATCH_SIZE = 500
-GAMMA = 0.99
-EPS_START = 0.9
-EPS_END = 0.001 #in long games each action is really important, so we want to be greedy after lots of training
-EPS_DECAY = 1000
-TAU = 0.005
-LR = 1e-4   
-
-# 4 actions, left, right, up, down
-n_actions = 4
-# Get the number of state observations
-env.reset()
-
-observation, reward, termination, truncation, info = env.last()
-#print(observation)
-'''example board
-
-{'height': 15, 'width': 15, 'snakes': [{'id': 'agent_0', 'name': 'agent_0', 'latency': '0', 'health': 99, 
-'body': [{'x': 8, 'y': 3}, {'x': 7, 'y': 3}, {'x': 7, 'y': 3}], 'head': {'x': 8, 'y': 3}, 'length': 3, 'shout': '', 
-'squad': '', 'customizations': {'color': '#00FF00', 'head': '', 'tail': ''}}], 'food': [{'x': 13, 'y': 13}, {'x': 12, 'y': 10}], 'hazards': []}
-'''
-
 
 '''turn the observation dictionary we get from the environment into a matrix of values
 we get:
@@ -100,6 +64,12 @@ The snakes health
 Where our snakes head is
 Where its body segments are
 Where the food is
+
+example board:
+
+{'height': 15, 'width': 15, 'snakes': [{'id': 'agent_0', 'name': 'agent_0', 'latency': '0', 'health': 99, 
+'body': [{'x': 8, 'y': 3}, {'x': 7, 'y': 3}, {'x': 7, 'y': 3}], 'head': {'x': 8, 'y': 3}, 'length': 3, 'shout': '', 
+'squad': '', 'customizations': {'color': '#00FF00', 'head': '', 'tail': ''}}], 'food': [{'x': 13, 'y': 13}, {'x': 12, 'y': 10}], 'hazards': []}
 '''
 def observation_to_values(observation):
     #init
@@ -130,29 +100,6 @@ def observation_to_values(observation):
     
     return state_matrix.flatten() #dont flatten if using conv2d layers
 
-#get the observation vector
-state = observation_to_values(observation["observation"])
-n_observations = len(state) #note the length of the vector
-
-#print("size of obs vector: ", n_observations)
-
-#initialize the networks
-num_hlayers = int(input("Number of hidden layers:   "))
-width_hlayers = int(input("Width of hidden layers:   "))
-hdims = [width_hlayers for i in range(0,num_hlayers)]
-#initialize the networks
-policy_net = DQN(n_observations, n_actions, hdims).to(device) 
-target_net = DQN(n_observations, n_actions, hdims).to(device) 
-target_net.load_state_dict(policy_net.state_dict()) 
-
-#initialize the optimizer
-optimizer = optim.AdamW(policy_net.parameters(), lr=LR, amsgrad=True)
-
-#initialize the replay memory
-memory = ReplayMemory(90000)
-
-
-steps_done = 0
 
 '''Select an action using the policy network, or a random action with probability epsilon'''
 def select_action(state):
@@ -170,9 +117,6 @@ def select_action(state):
     else:
         return torch.tensor([[env.action_space(env.agents[0]).sample()]], device=device, dtype=torch.long)
 
-
-# number of turns the snake survives in each episode
-episode_durations = []
 
 '''interactive plotting'''
 def plot_durations(show_result=False):
@@ -193,7 +137,6 @@ def plot_durations(show_result=False):
         plt.plot(means.numpy())
 
     plt.pause(0.001)  # pause a bit so that plots are updated
-
 
 
 '''Optimize our Q function approximator using the replay memory
@@ -249,7 +192,58 @@ def optimize_model():
     torch.nn.utils.clip_grad_value_(policy_net.parameters(), 100)
     optimizer.step()
 
-#in test reaches about 250 turns on average in 2000 episodes
+
+env = solo_v0.env(width=7, height=7) # create a 7x7 solo enviorment
+plt.ion()
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+# Saving the result of taking action a in state s, we progress to the next state and observe a reward
+Transition = namedtuple(
+    'Transition', 
+    ('state', 'action', 'next_state', 'reward')
+)
+
+# BATCH_SIZE is the number of transitions sampled from the replay buffer
+BATCH_SIZE = 500
+# GAMMA is the discount factor as mentioned in the previous section
+GAMMA = 0.99
+# EPS_START is the starting value of epsilon
+EPS_START = 0.9
+# EPS_END is the final value of epsilon
+EPS_END = 0.001 #in long games each action is really important, so we want to be greedy after lots of training
+# EPS_DECAY controls the rate of exponential decay of epsilon, higher means a slower decay
+EPS_DECAY = 1000
+# TAU is the update rate of the target network
+TAU = 0.005
+# LR is the learning rate of the AdamW optimizer
+LR = 1e-4   
+# 4 actions, left, right, up, down
+n_actions = 4
+# Get the number of state observations
+env.reset()
+observation, reward, termination, truncation, info = env.last()
+# Get the observation vector
+state = observation_to_values(observation["observation"])
+n_observations = len(state) # Note the length of the vector
+
+#initialize the networks
+num_hlayers = int(input("Number of hidden layers:   "))
+width_hlayers = int(input("Width of hidden layers:   "))
+hdims = [width_hlayers for i in range(0,num_hlayers)]
+#initialize the networks
+policy_net = DQN(n_observations, n_actions, hdims).to(device) 
+target_net = DQN(n_observations, n_actions, hdims).to(device) 
+target_net.load_state_dict(policy_net.state_dict()) 
+
+#initialize the optimizer
+optimizer = optim.AdamW(policy_net.parameters(), lr=LR, amsgrad=True)
+
+#initialize the replay memory
+memory = ReplayMemory(90000)
+
+steps_done = 0
+# number of turns the snake survives in each episode
+episode_durations = []
+# In test reaches about 250 turns on average in 2000 episodes
 num_episodes = int(input("How many episodes? "))
 
 for i_episode in range(num_episodes):
@@ -259,10 +253,9 @@ for i_episode in range(num_episodes):
     env.reset()
     observation, reward, termination, truncation, info = env.last()
     state = observation_to_values(observation["observation"])
-    #print("state: ", state)
     state = torch.tensor(state, dtype=torch.float32, device=device).unsqueeze(0)
     done = False
-    #every 10 episodes, update the target network to be equal to the policy network
+    # Every 10 episodes, update the target network to be equal to the policy network
     if i_episode % 10 == 0:
         target_net_state_dict = target_net.state_dict()
         policy_net_state_dict = policy_net.state_dict()
@@ -283,7 +276,6 @@ for i_episode in range(num_episodes):
             next_state = None
         else:
             reward = 1
-            #print(observation)
             next_state = torch.tensor(observation_to_values(observation), dtype=torch.float32, device=device).unsqueeze(0)
         t += reward
         reward = torch.tensor([reward], device=device)
@@ -299,7 +291,7 @@ for i_episode in range(num_episodes):
 
         if done:
             episode_durations.append(t + 1)
-            if i_episode % 100 == 0 and i_episode != 0: #only plotting every 100 eps to avoid the annoying popups
+            if i_episode % 100 == 0 and i_episode != 0: # Only plotting every 100 eps to avoid the annoying popups
                 plot_durations()
             break
 
