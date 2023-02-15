@@ -60,13 +60,14 @@ Where the food is
 
 example board:
 {
-    'height': 15, 'width': 15, 'snakes': [
-        {   'id': 'agent_0', 'name': 'agent_0', 'latency': '0', 'health': 99,
-            'body': [{'x': 8, 'y': 3}, {'x': 7, 'y': 3}, {'x': 7, 'y': 3}],
-            'head': {'x': 8, 'y': 3}, 'length': 3, 'shout': '',
-            'squad': '', 'customizations': {'color': '#00FF00', 'head': '', 'tail': ''}}
-    ],
-    'food': [{'x': 13, 'y': 13}, {'x': 12, 'y': 10}], 'hazards': []}'''
+'height': 15, 'width': 15, 'snakes': [
+    {   'id': 'agent_0', 'name': 'agent_0', 'latency': '0', 'health': 99,
+        'body': [{'x': 8, 'y': 3}, {'x': 7, 'y': 3}, {'x': 7, 'y': 3}],
+        'head': {'x': 8, 'y': 3}, 'length': 3, 'shout': '',
+        'squad': '', 'customizations': {'color': '#00FF00', 'head': '', 'tail': ''}}
+],
+'food': [{'x': 13, 'y': 13}, {'x': 12, 'y': 10}], 'hazards': []
+}'''
 def observation_to_values(observation):
     # Init
     board = observation['board']
