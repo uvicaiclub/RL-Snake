@@ -15,13 +15,14 @@ from pz_battlesnake.env import duels_v0
 
 
 class DQN(nn.Module):
-    def __init__(self, n_observations, n_actions, hidden_dim):
+    def __init__(self, obs_dims, n_actions, hidden_dim):
         super(DQN, self).__init__()
-        self.input_dim = n_observations
+        self.input_dim = obs_dims
         self.output_dim = n_actions
         self.hidden_dim = hidden_dim
-        current_dim = n_observations
+        current_dim = self.input_dim
         self.layers = nn.ModuleList()
+        # TODO: Design conv net to handle 3-channels of 2d inputs
         for hdim in hidden_dim:
             self.layers.append(nn.Linear(current_dim, hdim))
             current_dim = hdim
@@ -87,7 +88,7 @@ example observation:
 def observation_to_values(observation):
     try:
         board = observation['board']
-    except:
+    except KeyError:
         observation = observation['observation']
     # Init
     board = observation['board']
@@ -124,8 +125,81 @@ def observation_to_values(observation):
     return state_matrix.flatten()
 
 
+# Given a gamestate dict as returned by Battlesnake API, return a matrix that is rotated and 
+# centered on the head of the snake indicated by the "you" dict.
+# Implemented following code from make_state() in https://github.com/Fool-Yang/AlphaSnake-Zero/blob/master/code/utils/game.py
+def gamestate_to_values(gamestate):
+    board = gamestate['board']
+
+    # These values taken from the source, unsure on their significance
+    HEAD_m = 0.04
+    SNAKE_m = 0.02
+    HEALTH_m = 0.01
+    MY_HEAD = -1
+    WALL = 1
+
+    # Create the matrix to fill in from this game state
+    n_channels = 3  # Channels: heads, obstacles (bodies & walls), food
+    norm_width = board['width'] * 2 - 1
+    norm_height = board['height'] * 2 - 1
+    center_x = norm_width // 2
+    center_y = norm_height // 2
+    norm_matrix = np.zeros((3, norm_width, norm_height))
+
+    # Get your head position
+    head_x = gamestate['you']['head']['x']
+    head_y = gamestate['you']['head']['y']
+
+    # Set center position value (this represents your head position)
+    # Note: this value gets overwritten in channel 0, not sure what it's purpose is there
+    norm_matrix[:, center_x, center_y] = MY_HEAD
+
+    # For normalizing snake lengths, unsure on significance of the values used here
+    length_minus_half = len(gamestate['you']['body']) - 0.5
+
+    # Fill channels 0 & 1 with snake positions
+    for snake in board['snakes']:
+        # Get relative position of this head to your head
+        head_rel_x = snake['head']['x'] - head_x
+        head_rel_y = snake['head']['y'] - head_y
+
+        # Normalize by length relative to you
+        head_val = (len(snake['body']) - length_minus_half) * HEAD_m
+        norm_matrix[0, center_x + head_rel_x, center_y + head_rel_y] = head_val
+
+        # Now do the body positions (skip head)
+        body = snake['body'][1:]
+        dist = len(body)
+        for position in body:
+            body_rel_x = snake['body'][dist]['x'] - head_x
+            body_rel_y = snake['body'][dist]['y'] - head_y
+            norm_matrix[1, center_x + body_rel_x, center_y + body_rel_y] = dist*SNAKE_m
+            # Track distance to tail (tail has dist = 1)
+            dist -= 1
+
+    # Fill channel 2 with food positions
+    for food in board['food']:
+        food_rel_x = food['x'] - head_x
+        food_rel_y = food['y'] - head_y
+        norm_matrix[2, center_x + food_rel_x, center_y + food_rel_y] = (101 - gamestate['you']['health']) * HEALTH_m
+
+    # Lastly, rotate the board so that we are "facing up"
+    if len(gamestate['you']['body']) > 1:
+        neck = gamestate['you']['body'][1]
+        # Diagonals not possible, just check right, down, left
+        if head_x > neck['x']:
+            return np.rot90(norm_matrix, 1, (1,2))
+        elif head_y < neck['y']:
+            return np.rot90(norm_matrix, 2, (1,2))
+        elif head_x < neck['x']:
+            return np.rot90(norm_matrix, 3, (1,2))
+    # Either this is the first move (neck = head) or you are facing up (no rotation needed)
+    return norm_matrix
+
+
 # Select an action using the policy network, or a random action with probability epsilon
 def select_action(state):
+    # TODO: ensure that this handles new design with only 3 actions
     global steps_done
     sample = random.random()
     eps_threshold = EPS_END + ((EPS_START - EPS_END) * math.exp(-1. * steps_done / EPS_DECAY))
@@ -243,14 +317,14 @@ TAU = 0.005
 # LR is the learning rate of the AdamW optimizer
 LR = 1e-4
 
-# 4 actions, left, right, up, down
-n_actions = 4
+# 3 actions, left, up, right
+n_actions = 3
 # Get the number of state observations
 env.reset()
 observation, reward, termination, truncation, info = env.last()
 # Get the observation vector
-state = observation_to_values(observation["observation"])
-n_observations = len(state)  # Note the length of the vector
+norm_state = gamestate_to_values(observation["observation"])
+observation_dims = norm_state.shape  # Note the dimensions of the vector
 
 # Initialize the networks
 num_hlayers = int(input("Number of hidden layers:   "))
@@ -258,8 +332,8 @@ width_hlayers = int(input("Width of hidden layers:   "))
 hdims = [width_hlayers for i in range(0, num_hlayers)]
 
 # Initialize the networks
-policy_net = DQN(n_observations, n_actions, hdims).to(device)
-target_net = DQN(n_observations, n_actions, hdims).to(device)
+policy_net = DQN(observation_dims, n_actions, hdims).to(device)
+target_net = DQN(observation_dims, n_actions, hdims).to(device)
 target_net.load_state_dict(policy_net.state_dict())
 
 # Initialize the optimizer
@@ -279,6 +353,7 @@ for i_episode in range(num_episodes):
     print("Episode: ", i_episode)
     env.reset()
     observation, reward, termination, truncation, info = env.last()
+    # TODO: Get normalized state
     state = observation_to_values(observation["observation"])
     state = torch.tensor(state, dtype=torch.float32, device=device).unsqueeze(0)
     done = False
@@ -307,6 +382,8 @@ for i_episode in range(num_episodes):
                 next_state = None
             else:
                 reward = 0 if t > 50 else 0.1
+                # TODO: Get normalized state
+                # TODO: Ensure that gamestate is actually passed
                 next_state = torch.tensor(
                     observation_to_values(observation),
                     dtype=torch.float32, device=device
